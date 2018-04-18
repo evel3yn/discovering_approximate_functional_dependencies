@@ -6,7 +6,6 @@ This script aims to discover approximate functional dependencies in a given
 data set.
 """
 import sys
-import Queue
 
 
 def pprint(FDs):
@@ -55,25 +54,121 @@ def find_approximate_functional_dependencies(data_file_name, depth_limit, minimu
     # read input data:
     input_data = load_data(data_file_name)
 
-
     # Transform input_data (list of lists) into some better representation.
     # You need to decide what that representation should be.
     # Data transformation is optional!
+    FDs = []
     topic = input_data[0]
-    waiting_queue = Queue.queue()
-    for i in topic
-        wa
-    waiting_queue = topic
-    for t in topic:
+    # waiting queue is a queue for bfs
+    waiting_queue = []
+    for i in topic:
+        waiting_queue.append([i])
+    # when k = 1, we need to know the rank of the range1
+    rank_solo = 0
+    while len(waiting_queue) > 0:
+        t = waiting_queue.pop(0)
         # traverse all of the elements in the waiting queue
         # checking
+        if len(t) == 1:
+            # k = 1
+            # key is range1, value is times it shows up
+            d_solo = {}
+            for data in input_data[1:]:
+                data_solo = data[rank_solo]
+                if d_solo.get(data_solo) is None:
+                    d_solo[data_solo] = 1
+                else:
+                    d_solo[data_solo] = d_solo.get(data_solo) + 1
+            # the sum of max value of times the range1 shows up, for each domain
+            max_solo = 0
+            # total times of the range1 shows up, for all of the domain
+            all_solo = 0
+            for k, v in d_solo.items():
+                if v > max_solo:
+                    max_solo = v
+                all_solo += v
+            sup_solo = max_solo / all_solo
+            if sup_solo > minimum_support:
+                t_solo = ([], t[0], sup_solo)
+                FDs.append(t_solo)
+
+            rank_solo += 1
+
+        else:
+            lenthk = len(t)
+            domain = []
+            range1 = []
+            for i in range(0, len(t)):
+                if i != len(t) - 1:
+                    domain.append(t[i])
+                else:
+                    range1.append(t[i])
+            # find the times domain and range show up
+            # set up a dictionary to store the show up times
+            # the key of d is domain and range, the value is times
+            d = {}
+            for data1 in input_data[1:]:
+                data = tuple(data1[0:lenthk])
+                if d.get(data) is None:
+                    # d doesn't have value data
+                    d[data] = 1
+                else:
+                    d[data] = d.get(data) + 1
+            # traverse the dictionary to count
+            # in dictionary d2, key is domain, value is [[range1,times],[]]
+            d2 = {}
+            for doran, num in d.items():
+                do = tuple(doran[0:len(doran) - 1])
+                ran = [doran[-1]]
+                if d2.get(do) is None:
+                    d2[do] = [[ran, 1]]
+                else:
+                    v = d2.get(do)
+                    # is there already a range item in this domain
+                    exitsflag = False
+                    for i in v:
+                        if i[0] == ran:
+                            # exists
+                            i[1] += 1
+                            exitsflag = True
+                    if exitsflag is False:
+                        v.append([ran, 1])
+            # compute the support number
+            element = 0
+            denomina = 0
+            for k, v in d2.items():
+                # the sum of max value of times the range1 shows up, for each domain
+                max1 = 0
+                # total times of the range1 shows up, for all of the domain
+                all1 = 0
+                for i in v:
+                    if i[-1] > max1:
+                        max1 = i[-1]
+                    all1 += i[-1]
+                element += max1
+                denomina += all1
+            # the support number
+            sup = element / denomina
+            if sup > minimum_support:
+                ttt = (domain, range1[0], sup)
+                FDs.append(ttt)
+
         # put the child of A in the end of the queue
-        waiting_queue.
+        flag = False
+        permit1 = False
+        last_element = t[-1]
+        if len(t) < depth_limit:
+            # we will let it add child
+            permit1 = True
+        for e in topic:
+            if last_element == e:
+                flag = True
+            if flag is True and permit1 is True and last_element != e:
+                waiting_queue.append(t + [e])
 
     # --------Your code here! Optional! ----------#
 
     # Discover FDs with given minimun support and depth limit:
-    FDs = []
 
     # --------Your code here!---------------------#
 
@@ -82,17 +177,20 @@ def find_approximate_functional_dependencies(data_file_name, depth_limit, minimu
 
 if __name__ == '__main__':
     # parse command line arguments:
-    if len(sys.argv) < 3:
-        print('Wrong number of arguments. Correct example:')
-        print('python find_fds.py input_data_set.csv 3 0.91')
-    else:
-        data_file_name = str(sys.argv[1])
-        depth_limit = int(sys.argv[2])
-        minimum_support = float(sys.argv[3])
+    # if len(sys.argv) < 3:
+    #     print('Wrong number of arguments. Correct example:')
+    #     print('python find_fds.py input_data_set.csv 3 0.91')
+    # else:
+    # data_file_name = str(sys.argv[1])
+    # depth_limit = int(sys.argv[2])
+    # minimum_support = float(sys.argv[3])
+    data_file_name = "SimpleSampleDB.txt"
+    depth_limit = 3
+    minimum_support = 0.9
 
-        # Main function which you need to implement.
-        # It discover FDs in the input data with given minimum support and depth limit
-        FDs = find_approximate_functional_dependencies(data_file_name, depth_limit, minimum_support)
+    # Main function which you need to implement.
+    # It discover FDs in the input data with given minimum support and depth limit
+    FDs = find_approximate_functional_dependencies(data_file_name, depth_limit, minimum_support)
 
-        # print you findings:
-        pprint(FDs)
+    # print you findings:
+    pprint(FDs)
